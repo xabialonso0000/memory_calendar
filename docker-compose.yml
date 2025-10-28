@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: diary_app_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+      # In development, we'll use a simpler setup for hot-reloading
+      # A multi-stage Dockerfile will be used for production later
+    container_name: diary_app_frontend
+    ports:
+      - "5173:5173" # Vite's default port
+    volumes:
+      - ./frontend:/app
+      # This prevents the local node_modules from overwriting the container's
+      - /app/node_modules
+    environment:
+      # Enables file watching in Docker for hot-reloading
+      - CHOKIDAR_USEPOLLING=true
+    # The command to start the development server
+    command: npm run dev
