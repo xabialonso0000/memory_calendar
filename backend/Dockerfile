@@ -4,7 +4,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Create a non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
 # Copy and install dependencies
 COPY requirements.txt .
