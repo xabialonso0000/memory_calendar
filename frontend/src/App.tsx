@@ -13,6 +13,8 @@ import {
   Box,
   Pagination,
 } from '@mui/material';
+import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import './App.css';
 
 const API_URL = 'http://localhost:8000/api';
@@ -53,8 +55,8 @@ function App() {
   const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([]);
   const [scheduleTitle, setScheduleTitle] = useState('');
   const [scheduleDescription, setScheduleDescription] = useState('');
-  const [scheduleStartTime, setScheduleStartTime] = useState('');
-  const [scheduleEndTime, setScheduleEndTime] = useState('');
+  const [scheduleStartTime, setScheduleStartTime] = useState<Date | null>(null);
+  const [scheduleEndTime, setScheduleEndTime] = useState<Date | null>(null);
   const [scheduleSearchTerm, setScheduleSearchTerm] = useState('');
   const [schedulePage, setSchedulePage] = useState(1);
   const scheduleItemsPerPage = 5;
@@ -141,8 +143,8 @@ function App() {
         body: JSON.stringify({
           title: scheduleTitle,
           description: scheduleDescription,
-          start_time: scheduleStartTime,
-          end_time: scheduleEndTime,
+          start_time: scheduleStartTime.toISOString(),
+          end_time: scheduleEndTime.toISOString(),
         }),
       });
 
@@ -154,8 +156,8 @@ function App() {
       setScheduleEntries([...scheduleEntries, newEntry]);
       setScheduleTitle('');
       setScheduleDescription('');
-      setScheduleStartTime('');
-      setScheduleEndTime('');
+      setScheduleStartTime(null);
+      setScheduleEndTime(null);
     } catch (error) {
       console.error(error);
     }
@@ -305,7 +307,7 @@ function App() {
   );
 
   return (
-    <>
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6">Diary & Schedule App</Typography>
@@ -398,27 +400,17 @@ function App() {
                 value={scheduleDescription}
                 onChange={(e) => setScheduleDescription(e.target.value)}
               />
-              <TextField
-                type="datetime-local"
+              <DateTimePicker
                 label="Start Time"
-                fullWidth
-                margin="normal"
-                InputLabelProps={{
-                  shrink: true,
-                }}
                 value={scheduleStartTime}
-                onChange={(e) => setScheduleStartTime(e.target.value)}
+                onChange={(newValue) => setScheduleStartTime(newValue)}
+                renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
               />
-              <TextField
-                type="datetime-local"
+              <DateTimePicker
                 label="End Time"
-                fullWidth
-                margin="normal"
-                InputLabelProps={{
-                  shrink: true,
-                }}
                 value={scheduleEndTime}
-                onChange={(e) => setScheduleEndTime(e.target.value)}
+                onChange={(newValue) => setScheduleEndTime(newValue)}
+                renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
               />
               <Button type="submit" variant="contained" color="secondary">
                 Add Schedule Entry
@@ -519,31 +511,21 @@ function App() {
                   setEditingScheduleEntry({ ...editingScheduleEntry, description: e.target.value })
                 }
               />
-              <TextField
-                type="datetime-local"
+              <DateTimePicker
                 label="Start Time"
-                fullWidth
-                margin="normal"
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                value={editingScheduleEntry.start_time}
-                onChange={(e) =>
-                  setEditingScheduleEntry({ ...editingScheduleEntry, start_time: e.target.value })
+                value={new Date(editingScheduleEntry.start_time)}
+                onChange={(newValue) =>
+                  setEditingScheduleEntry({ ...editingScheduleEntry, start_time: newValue ? newValue.toISOString() : '' })
                 }
+                renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
               />
-              <TextField
-                type="datetime-local"
+              <DateTimePicker
                 label="End Time"
-                fullWidth
-                margin="normal"
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                value={editingScheduleEntry.end_time}
-                onChange={(e) =>
-                  setEditingScheduleEntry({ ...editingScheduleEntry, end_time: e.target.value })
+                value={new Date(editingScheduleEntry.end_time)}
+                onChange={(newValue) =>
+                  setEditingScheduleEntry({ ...editingScheduleEntry, end_time: newValue ? newValue.toISOString() : '' })
                 }
+                renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
               />
               <Button
                 variant="contained"
@@ -556,7 +538,7 @@ function App() {
           )}
         </Box>
       </Modal>
-    </>
+    </LocalizationProvider>
   );
 }
 
