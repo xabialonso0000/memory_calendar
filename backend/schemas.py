@@ -7,7 +7,7 @@ class DiaryEntryBase(BaseModel):
     content: str
 
 class DiaryEntryCreate(DiaryEntryBase):
-    pass
+    created_at: datetime
 
 class DiaryEntry(DiaryEntryBase):
     id: int

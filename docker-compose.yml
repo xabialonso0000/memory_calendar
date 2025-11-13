@@ -15,6 +15,7 @@ services:
   frontend:
     build:
       context: ./frontend
+      target: build
       # In development, we'll use a simpler setup for hot-reloading
       # A multi-stage Dockerfile will be used for production later
     container_name: diary_app_frontend
