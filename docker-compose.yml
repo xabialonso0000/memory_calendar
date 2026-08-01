@@ -25,5 +25,6 @@ services:
     environment:
       # Enables file watching in Docker for hot-reloading
       - CHOKIDAR_USEPOLLING=true
+      - VITE_API_URL=http://localhost:8000/api
     # The command to start the development server
     command: npm run dev

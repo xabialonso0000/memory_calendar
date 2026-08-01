@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Calendar, momentLocalizer, SlotInfo, View } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
-
-const API_URL = 'http://localhost:8000/api';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Snackbar, TextField } from '@mui/material';
+import { API_URL } from './runtimeConfig';
 const localizer = momentLocalizer(moment);
 
 interface ScheduleEntry {
@@ -36,6 +35,7 @@ export default function ScheduleCalendar() {
   const [entries, setEntries] = useState<ScheduleEntry[]>([]);
   const [form, setForm] = useState<FormState | null>(null);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [view, setView] = useState<View>('month');
   const [date, setDate] = useState(new Date());
 
@@ -73,17 +73,18 @@ export default function ScheduleCalendar() {
       body: JSON.stringify({ ...form, start_time: new Date(form.start_time).toISOString(), end_time: new Date(form.end_time).toISOString() }),
     });
     if (!response.ok) return setError('スケジュールを保存できませんでした');
-    setForm(null); setError(''); await loadEntries();
+    setForm(null); setError(''); setSuccess(form.id ? 'スケジュールを更新しました' : 'スケジュールを登録しました'); await loadEntries();
   };
 
   const remove = async () => {
     if (!form?.id || !window.confirm('このスケジュールを削除しますか？')) return;
     const response = await fetch(`${API_URL}/schedule/${form.id}`, { method: 'DELETE' });
     if (!response.ok) return setError('スケジュールを削除できませんでした');
-    setForm(null); setError(''); await loadEntries();
+    setForm(null); setError(''); setSuccess('スケジュールを削除しました'); await loadEntries();
   };
 
   return <Box sx={{ height: 620, mb: 4 }}>
+    {error && !form && <Alert severity="error" onClose={() => setError('')} sx={{ mb: 1 }}>{error}</Alert>}
     <Calendar
       localizer={localizer} events={events} selectable startAccessor="start" endAccessor="end"
       view={view} onView={setView} date={date} onNavigate={setDate}
@@ -105,5 +106,8 @@ export default function ScheduleCalendar() {
         <Button variant="contained" onClick={save}>保存</Button>
       </DialogActions>
     </Dialog>
+    <Snackbar open={Boolean(success)} autoHideDuration={5000} onClose={() => setSuccess('')} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+      <Alert onClose={() => setSuccess('')} severity="success" variant="filled">{success}</Alert>
+    </Snackbar>
   </Box>;
 }

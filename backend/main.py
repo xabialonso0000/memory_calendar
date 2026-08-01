@@ -84,7 +84,7 @@ def get_entries(db: Session = Depends(get_db)):
 
 @app.post("/api/entries", response_model=schemas.DiaryEntry, status_code=201)
 def create_entry(entry: schemas.DiaryEntryCreate, db: Session = Depends(get_db)):
-    db_entry = models.DiaryEntry(**entry.dict())
+    db_entry = models.DiaryEntry(**entry.model_dump())
     db.add(db_entry)
     db.commit()
     db.refresh(db_entry)
@@ -103,7 +103,7 @@ def update_entry(entry_id: int, updated_entry: schemas.DiaryEntryUpdate, db: Ses
     if db_entry is None:
         raise HTTPException(status_code=404, detail="Entry not found")
     
-    for key, value in updated_entry.dict().items():
+    for key, value in updated_entry.model_dump().items():
         setattr(db_entry, key, value)
         
     db.commit()
@@ -126,7 +126,7 @@ def get_schedule_entries(db: Session = Depends(get_db)):
 
 @app.post("/api/schedule", response_model=schemas.ScheduleEntry, status_code=201)
 def create_schedule_entry(entry: schemas.ScheduleEntryCreate, db: Session = Depends(get_db)):
-    db_entry = models.ScheduleEntry(**entry.dict())
+    db_entry = models.ScheduleEntry(**entry.model_dump())
     db.add(db_entry)
     db.commit()
     db.refresh(db_entry)
@@ -145,7 +145,7 @@ def update_schedule_entry(entry_id: int, updated_entry: schemas.ScheduleEntryCre
     if db_entry is None:
         raise HTTPException(status_code=404, detail="Schedule entry not found")
 
-    for key, value in updated_entry.dict().items():
+    for key, value in updated_entry.model_dump().items():
         setattr(db_entry, key, value)
 
     db.commit()

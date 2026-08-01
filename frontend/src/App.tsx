@@ -11,14 +11,15 @@ import {
   Toolbar,
   Modal,
   Box,
+  Alert,
+  Snackbar,
 } from '@mui/material';
 import ReactQuill from 'react-quill';
 import DOMPurify from 'dompurify';
 import 'react-quill/dist/quill.snow.css';
 import './App.css';
 import ScheduleCalendar from './ScheduleCalendar';
-
-const API_URL = 'http://localhost:8000/api';
+import { API_URL } from './runtimeConfig';
 
 interface DiaryEntry {
   id: number;
@@ -33,6 +34,7 @@ function App() {
   const [content, setContent] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
+  const [notice, setNotice] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
 
   const quillRef = useRef<ReactQuill>(null);
 
@@ -55,7 +57,7 @@ function App() {
           });
 
           if (!uploadResponse.ok) {
-            throw new Error('Failed to upload image');
+            throw new Error('画像をアップロードできませんでした');
           }
 
           const uploadResult = await uploadResponse.json();
@@ -70,7 +72,7 @@ function App() {
           }
         } catch (error) {
           console.error(error);
-          alert('Failed to upload image');
+          setNotice({ message: error instanceof Error ? error.message : '画像をアップロードできませんでした', severity: 'error' });
         }
       }
     };
@@ -95,12 +97,13 @@ function App() {
     try {
       const response = await fetch(`${API_URL}/entries`);
       if (!response.ok) {
-        throw new Error('Failed to fetch entries');
+        throw new Error('日記を取得できませんでした');
       }
       const data: DiaryEntry[] = await response.json();
       setEntries(data);
     } catch (error) {
       console.error(error);
+      setNotice({ message: error instanceof Error ? error.message : '日記を取得できませんでした', severity: 'error' });
     }
   };
 
@@ -111,7 +114,7 @@ function App() {
   const handleDiarySubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!title || !content) {
-      alert('Title and content are required');
+      setNotice({ message: 'タイトルと本文を入力してください', severity: 'error' });
       return;
     }
 
@@ -131,31 +134,35 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create entry');
+        throw new Error('日記を登録できませんでした');
       }
 
       fetchEntries();
       setTitle('');
       setContent('');
+      setNotice({ message: '日記を登録しました', severity: 'success' });
     } catch (error) {
       console.error(error);
+      setNotice({ message: error instanceof Error ? error.message : '日記を登録できませんでした', severity: 'error' });
     }
   };
 
   const handleDiaryDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this diary entry?')) {
+    if (window.confirm('この日記を削除しますか？')) {
       try {
         const response = await fetch(`${API_URL}/entries/${id}`, {
           method: 'DELETE',
         });
 
         if (!response.ok) {
-          throw new Error('Failed to delete entry');
+          throw new Error('日記を削除できませんでした');
         }
 
         fetchEntries();
+        setNotice({ message: '日記を削除しました', severity: 'success' });
       } catch (error) {
         console.error(error);
+        setNotice({ message: error instanceof Error ? error.message : '日記を削除できませんでした', severity: 'error' });
       }
     }
   };
@@ -187,13 +194,15 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update entry');
+        throw new Error('日記を更新できませんでした');
       }
 
       fetchEntries();
       handleModalClose();
+      setNotice({ message: '日記を更新しました', severity: 'success' });
     } catch (error) {
       console.error(error);
+      setNotice({ message: error instanceof Error ? error.message : '日記を更新できませんでした', severity: 'error' });
     }
   };
 
@@ -298,6 +307,11 @@ function App() {
           )}
         </Box>
       </Modal>
+      <Snackbar open={Boolean(notice)} autoHideDuration={5000} onClose={() => setNotice(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={() => setNotice(null)} severity={notice?.severity || 'success'} variant="filled">
+          {notice?.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

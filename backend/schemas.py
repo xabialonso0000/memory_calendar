@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
 
@@ -13,11 +13,10 @@ class DiaryEntryUpdate(DiaryEntryBase):
     pass
 
 class DiaryEntry(DiaryEntryBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     created_at: datetime
-
-    class Config:
-        orm_mode = True
 
 class ScheduleEntryBase(BaseModel):
     title: str
@@ -29,7 +28,6 @@ class ScheduleEntryCreate(ScheduleEntryBase):
     pass
 
 class ScheduleEntry(ScheduleEntryBase):
-    id: int
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        orm_mode = True
+    id: int
