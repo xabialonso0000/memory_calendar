@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, File, UploadFile
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
+import shutil
 
 from database import SessionLocal, engine
 import models, schemas
@@ -9,6 +11,8 @@ import models, schemas
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Allow CORS for the frontend
 origins = [
@@ -31,6 +35,13 @@ def get_db():
     finally:
         db.close()
 
+@app.post("/api/upload")
+def upload_image(file: UploadFile = File(...)):
+    file_path = f"uploads/{file.filename}"
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    return {"file_path": f"/{file_path}"}
+
 @app.get("/api/entries", response_model=List[schemas.DiaryEntry])
 def get_entries(db: Session = Depends(get_db)):
     return db.query(models.DiaryEntry).all()
@@ -51,7 +62,7 @@ def get_entry(entry_id: int, db: Session = Depends(get_db)):
     return db_entry
 
 @app.put("/api/entries/{entry_id}", response_model=schemas.DiaryEntry)
-def update_entry(entry_id: int, updated_entry: schemas.DiaryEntryCreate, db: Session = Depends(get_db)):
+def update_entry(entry_id: int, updated_entry: schemas.DiaryEntryUpdate, db: Session = Depends(get_db)):
     db_entry = db.query(models.DiaryEntry).filter(models.DiaryEntry.id == entry_id).first()
     if db_entry is None:
         raise HTTPException(status_code=404, detail="Entry not found")

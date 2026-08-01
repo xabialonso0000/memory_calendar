@@ -2,3 +2,4 @@ fastapi
 uvicorn[standard]
 SQLAlchemy
 alembic
+python-multipart

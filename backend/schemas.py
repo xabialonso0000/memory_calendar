@@ -9,6 +9,9 @@ class DiaryEntryBase(BaseModel):
 class DiaryEntryCreate(DiaryEntryBase):
     created_at: datetime
 
+class DiaryEntryUpdate(DiaryEntryBase):
+    pass
+
 class DiaryEntry(DiaryEntryBase):
     id: int
     created_at: datetime
