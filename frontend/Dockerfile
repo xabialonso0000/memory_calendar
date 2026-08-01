@@ -1,15 +1,15 @@
 # build stage
-FROM node:20 as build
+FROM node:20 AS build
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN rm -f package-lock.json && rm -rf node_modules && yarn install --frozen-lockfile
+RUN npm ci
 
 COPY . .
 
-RUN yarn build
+RUN npm run build
 
 # production stage
 FROM nginx:stable-alpine

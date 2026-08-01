@@ -13,8 +13,10 @@ import {
   Box,
 } from '@mui/material';
 import ReactQuill from 'react-quill';
+import DOMPurify from 'dompurify';
 import 'react-quill/dist/quill.snow.css';
 import './App.css';
+import ScheduleCalendar from './ScheduleCalendar';
 
 const API_URL = 'http://localhost:8000/api';
 
@@ -199,14 +201,15 @@ function App() {
     <>
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6">Diary App</Typography>
+          <Typography variant="h6">日記・スケジュール</Typography>
         </Toolbar>
       </AppBar>
       <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Typography variant="h5" gutterBottom>スケジュール</Typography>
+        <ScheduleCalendar />
         <Grid container spacing={4}>
           <Grid item xs={12} md={7}>
-            {/* Calendar was here */}
-            <Typography variant="h5" gutterBottom>Diary Entries</Typography>
+            <Typography variant="h5" gutterBottom>日記一覧</Typography>
             <div style={{ marginTop: '2rem' }}>
               {entries.map((entry) => (
                 <Card key={entry.id} sx={{ mb: 2 }}>
@@ -216,10 +219,10 @@ function App() {
                       {new Date(entry.created_at).toLocaleDateString()}
                     </Typography>
                     <Box sx={{ mt: 1, p: 2, border: '1px solid #ddd', borderRadius: '4px', '& h1, & h2, & h3': { mt: 2, mb: 1 } }}
-                         dangerouslySetInnerHTML={{ __html: entry.content }}
+                         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(entry.content) }}
                     />
-                    <Button size="small" onClick={() => handleEditClick(entry)}>Edit</Button>
-                    <Button size="small" color="error" onClick={() => handleDiaryDelete(entry.id)}>Delete</Button>
+                    <Button size="small" onClick={() => handleEditClick(entry)}>編集</Button>
+                    <Button size="small" color="error" onClick={() => handleDiaryDelete(entry.id)}>削除</Button>
                   </CardContent>
                 </Card>
               ))}
@@ -228,11 +231,11 @@ function App() {
           <Grid item xs={12} md={5}>
             <div>
               <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
-                New Diary Entry
+                新しい日記
               </Typography>
               <form onSubmit={handleDiarySubmit}>
                 <TextField
-                  label="Title"
+                  label="タイトル"
                   fullWidth
                   margin="normal"
                   value={title}
@@ -247,7 +250,7 @@ function App() {
                   style={{ height: '200px', marginBottom: '50px' }}
                 />
                 <Button type="submit" variant="contained" color="primary">
-                  Add Diary Entry
+                  日記を登録
                 </Button>
               </form>
             </div>
@@ -257,7 +260,7 @@ function App() {
       <Modal open={isModalOpen} onClose={handleModalClose}>
         <Box sx={{ ...style, width: 400 }}>
           <Typography variant="h6" id="modal-title">
-            Edit Diary Entry
+            日記を編集
           </Typography>
           {editingEntry && (
             <div>
@@ -266,7 +269,7 @@ function App() {
               </Typography>
               <form onSubmit={handleUpdateEntry}>
                 <TextField
-                  label="Title"
+                  label="タイトル"
                   fullWidth
                   margin="normal"
                   value={editingEntry.title}
@@ -288,7 +291,7 @@ function App() {
                   color="primary"
                   type="submit"
                 >
-                  Update
+                  更新
                 </Button>
               </form>
             </div>

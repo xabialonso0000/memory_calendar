@@ -3,7 +3,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
-import shutil
+from pathlib import Path
+from uuid import uuid4
 
 from database import SessionLocal, engine
 import models, schemas
@@ -12,7 +13,17 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+MAX_UPLOAD_SIZE = 5 * 1024 * 1024
+IMAGE_TYPES = {
+    "image/jpeg": (".jpg", (b"\xff\xd8\xff",)),
+    "image/png": (".png", (b"\x89PNG\r\n\x1a\n",)),
+    "image/gif": (".gif", (b"GIF87a", b"GIF89a")),
+    "image/webp": (".webp", (b"RIFF",)),
+}
+
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 # Allow CORS for the frontend
 origins = [
@@ -36,11 +47,36 @@ def get_db():
         db.close()
 
 @app.post("/api/upload")
-def upload_image(file: UploadFile = File(...)):
-    file_path = f"uploads/{file.filename}"
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    return {"file_path": f"/{file_path}"}
+async def upload_image(file: UploadFile = File(...)):
+    image_type = IMAGE_TYPES.get(file.content_type or "")
+    if image_type is None:
+        raise HTTPException(status_code=415, detail="JPEG, PNG, GIF, or WebP images only")
+
+    extension, signatures = image_type
+    first_chunk = await file.read(1024 * 1024)
+    is_valid_signature = any(first_chunk.startswith(signature) for signature in signatures)
+    if file.content_type == "image/webp":
+        is_valid_signature = first_chunk.startswith(b"RIFF") and first_chunk[8:12] == b"WEBP"
+    if not is_valid_signature:
+        raise HTTPException(status_code=400, detail="File content does not match its image type")
+
+    destination = UPLOAD_DIR / f"{uuid4().hex}{extension}"
+    total_size = len(first_chunk)
+    try:
+        with destination.open("wb") as buffer:
+            buffer.write(first_chunk)
+            while chunk := await file.read(1024 * 1024):
+                total_size += len(chunk)
+                if total_size > MAX_UPLOAD_SIZE:
+                    raise HTTPException(status_code=413, detail="Image must be 5 MB or smaller")
+                buffer.write(chunk)
+    except Exception:
+        destination.unlink(missing_ok=True)
+        raise
+    finally:
+        await file.close()
+
+    return {"file_path": f"/uploads/{destination.name}"}
 
 @app.get("/api/entries", response_model=List[schemas.DiaryEntry])
 def get_entries(db: Session = Depends(get_db)):

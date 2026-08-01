@@ -26,4 +26,4 @@ services:
       # Enables file watching in Docker for hot-reloading
       - CHOKIDAR_USEPOLLING=true
     # The command to start the development server
-    command: yarn dev
+    command: npm run dev
